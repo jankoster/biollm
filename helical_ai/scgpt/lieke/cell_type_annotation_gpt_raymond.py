@@ -32,29 +32,20 @@ from helical.models.geneformer import Geneformer, GeneformerConfig
 from copy import deepcopy
 from torch.nn.functional import one_hot
 import scanpy as sc
+import os
 
 # %%
-import sys
-import platform
-# Python version
-print("Python version:", sys.version)
-# Platform info
-print("Platform:", platform.platform())
-# Installed packages
-# For Python ≥3.8
-from importlib.metadata import distributions
-installed_packages = [f"{d.metadata['Name']}=={d.version}" for d in distributions()]
-print("Installed packages:", installed_packages)
-
-
-
-# %%
+filename_root_target = "250215_kr250212a_10k_integrated-cca"
 filename_root_ref = "Fskin_obj_2_4_1_webatlas"
-filename= filename_root_ref + ".h5ad"
-root_filename_target = "250407_kr250331a_10k_integrated-cca"
-filename_target = root_filename_target + ".h5ad"
+
+foldername_input = "/home/lieke_unix/input/raymond/"
+foldername_output = "/home/lieke_unix/output/raymond/"
+filename_ref= os.path.join(foldername_input, filename_root_ref + ".h5ad")
+
+filename_out_base = os.path.join(foldername_output, filename_root_target)
+filename_target = os.path.join(foldername_input, filename_root_target + ".h5ad")
 ref_meta_colname = "annotation_fine"
-filename_out_predictions = root_filename_target + "celltype_preds.csv"
+filename_out_predictions = filename_out_base + "_celltype_preds.csv"
 sample_id = "sanger_id"
 sample_id_target = "HTO_maxID"
 predictions_meta_name = "cell_type_predictions"
@@ -75,7 +66,7 @@ categories_of_interest = [
 
 # %%
 # Load fine-tuning data
-adata = sc.read_h5ad(filename)
+adata = sc.read_h5ad(filename_ref)
 
 
 # %%
@@ -310,7 +301,7 @@ def get_evaluations(name_data_set, y_true, y_pred) -> dict:
 get_evaluations("Test set", y_true, y_pred)
 
 # %%
-get_evaluations_2("Test set", y_true, y_pred)
+#get_evaluations_2("Test set", y_true, y_pred)
 
 # %%
 # Visualize class distribution
@@ -456,7 +447,7 @@ if final_task == "evaluation":
     id2type_unseen = dict(enumerate(adata_unseen.obs[ref_meta_colname].astype("category").cat.categories))
     print(id2type_unseen == id2type)
 
-    print("Common labels:", sorted(common_labels))
+   # print("Common labels:", sorted(common_labels))
     print("Unseen categories:", list(adata_unseen.obs[ref_meta_colname].astype("category").cat.categories))
 
 # %%
@@ -483,7 +474,7 @@ unique_preds = set(y_pred_unseen)
 print(unique_preds)
 
 
-print(unique_trues)
+#print(unique_trues)
 
 y_pred_unseen
 
@@ -596,6 +587,7 @@ plt.xticks(rotation=45, ha="right")
 plt.title("Cell type composition per sample")
 plt.legend(title="Cell type", bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.tight_layout()
+plt.savefig(filename_out_base + "adata_celltype_composition_per_sample.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 # %%
@@ -641,6 +633,7 @@ plt.xticks(rotation=45, ha="right")
 plt.title("Cell type composition per sample")
 plt.legend(title="Cell type", bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.tight_layout()
+plt.savefig(filename_out_base + "adata_target_celltype_composition_per_sample.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% [markdown]
@@ -711,6 +704,7 @@ axs[1, 1].set_ylim([0, 1])
 
 fig.suptitle("scGPT vs. Geneformer \n Probing Comparison")
 fig.tight_layout()
+plt.savefig(filename_out_base + "scGPT_vs_Geneformer.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 
