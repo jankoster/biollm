@@ -1,0 +1,64 @@
+    1  ls
+    2  pwd
+    3  cd /home
+    4  ls
+    5  cd lieke_unix/
+    6  ls
+    7  nvidia-smi
+    8  cd ..
+    9  ls
+   10  cd lieke_unix/
+   11  ls
+   12  mkdir helical_ai
+   13  sudo apt update && sudo apt upgrade -y
+   14  ls
+   15  sudo apt install wget bzip2 -y
+   16  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+   17  ls
+   18  bash Miniconda3-latest-Linux-x86_64.sh 
+   19  conda activate
+   20  cd /home
+   21  ls
+   22  cd lieke_unix/
+   23  ls
+   24  conda activate
+   25  conda init
+   26  cat ~/.bashrc
+   27  ls
+   28  cd miniconda3/
+   29  ls
+   30  cd bin
+   31  ls
+   32  conda
+   33  cd /home/lieke_unix/
+   34  echo 'export PATH="$HOME/lieke_unix/miniconda3/bin:$PATH"' >> ~/.bashrc
+   35  cd /home/lieke_unix/
+   36  ls
+   37  source ~/.bashrc
+   38  conda
+   39  ls ~/lieke_unix/miniconda3/bin | grep conda
+   40  ls ~/miniconda3/bin | grep conda
+   41  echo 'export PATH="$HOME/miniconda3/bin:$PATH"' >> ~/.bashrc
+   42  source ~/.bashrc
+   43  conda
+   44  conda init
+   45  cd /home/lieke_unix/
+   46  conda
+   47  python3
+   48  pip3 --version
+   49  ls
+   50  cp /mnt/d/github/lieke/singlecellgpt/Cell_Type_Annotation_jansky_westerhout.ipynb helical_ai/
+   51  cd helical_ai/
+   52  ls
+   53  conda create -n singlecellgpt_env python=3.12.11
+   54  conda activate singlecellgpt_env
+   55  vscode .
+   56  code .
+   57  history > ~/my_full_powershell_wsl_history.txt
+   58  ls
+   59  cp chayenne_scRNAseq_celltype_preds.csv /mnt/d/github/lieke/singlecellgpt/
+   60  cd ..
+   61  ls
+   62  cp my_full_powershell_wsl_history.txt helical_ai/
+   63  cp helical_ai/my_full_powershell_wsl_history.txt /mnt/d/github/lieke/singlecellgpt/
+   64  history > helical_ai/my_full_powershell_wsl_history.txt
