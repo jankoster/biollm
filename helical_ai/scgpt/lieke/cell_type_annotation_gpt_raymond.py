@@ -306,7 +306,13 @@ get_evaluations("Test set", y_true, y_pred)
 # %%
 # Visualize class distribution
 from sklearn_evaluation import plot
-plot.target_analysis(y_true)
+ax = plot.target_analysis(y_true)  # returns Axes
+ax.legend(id2type.values(), title="Cell Types", loc="upper right")
+
+fig = ax.get_figure()              # get the parent Figure
+fig.savefig(filename_out_base + "reftest_true_celltype_frequency.png", dpi=300, bbox_inches="tight")
+plt.close(fig)
+
 print(id2type)
 
 # %%
@@ -331,11 +337,7 @@ print(id2type)
 
 # %%
 final_task = "evaluation" # "evaluation" or "target"
-if final_task == "target":
-    adata_unseen = sc.read_h5ad(filename_target)
-    adata_unseen.X = adata_unseen.raw.X.copy()
-    adata_unseen.var["gene_name"] = adata_unseen.var_names # "Data must have the provided key 'gene_name' in its 'var' section to be processed by the Helical RNA model."
-elif final_task == "evaluation": 
+if final_task == "evaluation": 
     adata_unseen = adata_evaluation # AnnData preprocessing was done before the finetuning - evaluation split.
     
 
@@ -357,16 +359,6 @@ if final_task == "evaluation":
     get_evaluations("Unseen evaluation set", y_true_unseen, y_pred_unseen)
     plot.target_analysis(y_true_unseen)
     print(id2type)
-elif final_task == "target":
-    save_annData_with_predictions = True
-
-    y_pred_unseen = [id2type[prediction] for prediction in np.array(torch.argmax(predictions_nn_unseen, dim=1))]
-    if save_annData_with_predictions:
-        adata_unseen.obs[predictions_meta_name] = y_pred_unseen
-        adata_unseen.obs.to_csv(filename_out_predictions)
-
-    print(adata_unseen.obs)
-
 
 # %%
 if final_task == "evaluation":
@@ -410,7 +402,9 @@ sns.heatmap(cm, annot=True, fmt="d", xticklabels=all_labels, yticklabels=all_lab
 plt.xlabel("Predicted")
 plt.ylabel("True")
 plt.title("Confusion matrix (unseen set)")
+plt.savefig(filename_out_base + "confusionmatrix_unseenset_celltype_composition_per_sample.png", dpi=300, bbox_inches="tight")
 plt.show()
+plt.close()
 
 # %%
 # Unique labels in the training set
@@ -587,8 +581,9 @@ plt.xticks(rotation=45, ha="right")
 plt.title("Cell type composition per sample")
 plt.legend(title="Cell type", bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.tight_layout()
-plt.savefig(filename_out_base + "adata_celltype_composition_per_sample.png", dpi=300, bbox_inches="tight")
+plt.savefig(filename_out_base + "reference_celltype_composition_per_sample.png", dpi=300, bbox_inches="tight")
 plt.show()
+plt.close()
 
 # %%
 adata_target.obs
@@ -633,5 +628,6 @@ plt.xticks(rotation=45, ha="right")
 plt.title("Cell type composition per sample")
 plt.legend(title="Cell type", bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.tight_layout()
-plt.savefig(filename_out_base + "adata_target_celltype_composition_per_sample.png", dpi=300, bbox_inches="tight")
+plt.savefig(filename_out_base + "target_celltype_composition_per_sample.png", dpi=300, bbox_inches="tight")
 plt.show()
+plt.close()
