@@ -35,7 +35,8 @@ import scanpy as sc
 import os
 
 # %%
-filename_root_target = "250215_kr250212a_10k_integrated-cca"
+# To run from the command line in singlecellgpt_env : python cell_type_annotation_gpt_raymond.py > /home/lieke_unix/output/output.log 2>&1
+filename_root_target = "250207_kr250113b_10k_integrated-cca"
 filename_root_ref = "Fskin_obj_2_4_1_webatlas"
 
 foldername_input = "/home/lieke_unix/input/raymond/"
