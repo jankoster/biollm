@@ -51,14 +51,33 @@ sample_id_target = "HTO_maxID"
 predictions_meta_name = "cell_type_predictions"
 
 # Define categories of interest from ref data (fibroblast example)
-categories_of_interest = [
-    "CCL19+ fibroblast",
-    "FRZB+ early fibroblast",
-    "HOXC5+ early fibroblast",
-    "Myofibroblasts",
-    "PEAR1+ fibroblast",
-    "WNT2+ fibroblast",
-]
+
+categories_of_interest_fibroblasts = [
+        "CCL19+ fibroblast",
+        "FRZB+ early fibroblast",
+        "HOXC5+ early fibroblast",
+        "Myofibroblasts",
+        "PEAR1+ fibroblast",
+        "WNT2+ fibroblast"
+    ]
+
+categories_of_interest_keratinocytes = [
+        "Companion layer",
+        "Cuticle/cortex",
+        "DPYSL2+ basal",
+        "Early LE",
+        "Immature basal",
+        "Immature suprabasal",
+        "Inner root sheath",
+        "LE",
+        "Matrix",
+        "Outer root sheath",
+        "Periderm",
+        "Placode",
+        "POSTN+ basal",
+        "Suprabasal IFE"
+    ]
+
 
 foldername_input_base = "/home/lieke_unix/input/"
 foldername_output_base = "/home/lieke_unix/output/"
@@ -88,7 +107,13 @@ filename_target = os.path.join(foldername_input, filename_root_target + ".h5ad")
 filename_out_base = os.path.join(foldername_output, filename_root_target)
 filename_out_predictions = filename_out_base + "_celltype_preds.csv"
 
-
+if any(x in filename_root_target for x in ["kr250212a_10k", "kr250113b_10k", "kr250113c_10k", "kr2503m_10k"]):
+    categories_of_interest = categories_of_interest_fibroblasts
+elif any(x in filename_root_target for x in ["kr250331a", "kr250331b", "kr230119a"]):
+    categories_of_interest = categories_of_interest_keratinocytes
+else:
+   raise ValueError(f"Unknown filename root: {filename_root_target}")
+ 
 
 # -------------------------------
 # Prepare log file with timestamp
