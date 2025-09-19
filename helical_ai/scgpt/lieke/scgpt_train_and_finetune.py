@@ -1,3 +1,4 @@
+
 # %% [markdown]
 # To run this script from the command line in conda singlecellgpt_env:
 # python cell_type_annotation_gpt_raymond.py 2503_kr113a_10k --tee
@@ -35,120 +36,10 @@ from helical.models.scgpt import scGPT, scGPTConfig
 from copy import deepcopy
 from torch.nn.functional import one_hot
 import scanpy as sc
-import os
-import sys
-import argparse
 
 # %% [markdown]
-# Set variables
-project_folder = "raymond"
-filename_root_ref = "Fskin_obj_2_4_1_webatlas"
-ref_meta_colname = "annotation_fine"
-filename_root_target_manual = ''
-
-sample_id = "sanger_id"
-sample_id_target = "HTO_maxID"
-predictions_meta_name = "cell_type_predictions"
-
-# Define categories of interest from ref data (fibroblast example)
-
-categories_of_interest_fibroblasts = [
-        "CCL19+ fibroblast",
-        "FRZB+ early fibroblast",
-        "HOXC5+ early fibroblast",
-        "Myofibroblasts",
-        "PEAR1+ fibroblast",
-        "WNT2+ fibroblast"
-    ]
-
-categories_of_interest_keratinocytes = [
-        "Companion layer",
-        "Cuticle/cortex",
-        "DPYSL2+ basal",
-        "Early LE",
-        "Immature basal",
-        "Immature suprabasal",
-        "Inner root sheath",
-        "LE",
-        "Matrix",
-        "Outer root sheath",
-        "Periderm",
-        "Placode",
-        "POSTN+ basal",
-        "Suprabasal IFE"
-    ]
-
-
-foldername_input_base = "/home/lieke_unix/input/"
-foldername_output_base = "/home/lieke_unix/output/"
-
-foldername_input = os.path.join(foldername_input_base, project_folder)
-foldername_output = os.path.join(foldername_output_base, project_folder)
-filename_ref= os.path.join(foldername_input, filename_root_ref + ".h5ad")
-
-
-# %% 
-# Setting arguments
-if __name__ == "__main__":  
-    if len(sys.argv) > 1:  # means you're running via command line with args
-        parser = argparse.ArgumentParser(description="Run cell type annotation and log output automatically.")
-        parser.add_argument("filename_root_target", type=str, help="Dataset name for this run, used in logs and filenames.")
-        parser.add_argument("--tee", action="store_true", help="Optional. If set, print to terminal as well as log file")
-        args = parser.parse_args()
-
-        filename_root_target = args.filename_root_target
-        use_tee = args.tee
-    else:
-        # fallback for interactive runs
-        filename_root_target = filename_root_target_manual   
-        tee_enabled = True    
-
-filename_target = os.path.join(foldername_input, filename_root_target + ".h5ad")
-filename_out_base = os.path.join(foldername_output, filename_root_target)
-filename_out_predictions = filename_out_base + "_celltype_preds.csv"
-
-if any(x in filename_root_target for x in ["kr250212a_10k", "kr250113b_10k", "kr250113c_10k", "kr2503m_10k"]):
-    categories_of_interest = categories_of_interest_fibroblasts
-elif any(x in filename_root_target for x in ["kr250331a", "kr250331b", "kr230119a"]):
-    categories_of_interest = categories_of_interest_keratinocytes
-else:
-   raise ValueError(f"Unknown filename root: {filename_root_target}")
- 
-
-# -------------------------------
-# Prepare log file with timestamp
-# -------------------------------
-os.makedirs(foldername_output, exist_ok=True)
-
-from datetime import datetime
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_file_path = os.path.join(foldername_output, f"output_{filename_root_target}_{timestamp}.log")
-
-# -------------------------------
-# Redirect stdout/stderr
-# -------------------------------
-if use_tee:
-    class Tee:
-        def __init__(self, *files):
-            self.files = files
-        def write(self, data):
-            for f in self.files:
-                f.write(data)
-                f.flush()
-        def flush(self):
-            for f in self.files:
-                f.flush()
-    sys.stdout = Tee(sys.stdout, open(log_file_path, "w"))
-    sys.stderr = Tee(sys.stderr, open(log_file_path, "w"))
-else:
-    sys.stdout = open(log_file_path, "w")
-    sys.stderr = sys.stdout
-
-print(f"Starting processing for target file: {filename_target}")
-print(f"Logging to: {log_file_path}")
-
-# %% [markdown]
-# Fine-tuning data: Jansky
+# Get settings
+from scgpt_settings import *
 
 # %%
 # Load fine-tuning data
@@ -362,8 +253,6 @@ model_path = os.path.join(foldername_output, timestamp + "_head_model_scgpt.pt")
 torch.save(head_model_scgpt.state_dict(), model_path)
 
 print(f"Trained model saved to: {model_path}")
-
-
 
 # %%
 # Predictions on the test set and ground truth
@@ -602,117 +491,3 @@ if final_task == "evaluation":
 
 
 
-
-# %%
-final_task = "target" # "evaluation" or "target"
-if final_task == "target":
-    print(filename_target)
-    adata_target = sc.read_h5ad(filename_target)
-    adata_target.X = adata_target.raw.X.copy()
-    adata_target.var["gene_name"] = adata_target.var_names # "Data must have the provided key 'gene_name' in its 'var' section to be processed by the Helical RNA model."
-   
-
-# %%
-# Process the unseen data
-if Normalize_SubsetHighlyVariable:
-    data_processed = scgpt.process_data(adata_target, gene_names = "gene_name", fine_tuning=True)
-else:
-    data_processed = scgpt.process_data(adata_target, gene_names = "gene_name")
-
-# Get embeddings and predictions
-x_unseen = scgpt.get_embeddings(data_processed)
-predictions_nn_unseen = head_model_scgpt(torch.Tensor(x_unseen))
-
-# %%
-if final_task == "target":
-    save_annData_with_predictions = True
-
-    y_pred_unseen = [id2type[prediction] for prediction in np.array(torch.argmax(predictions_nn_unseen, dim=1))]
-    if save_annData_with_predictions:
-        adata_target.obs[predictions_meta_name] = y_pred_unseen
-        adata_target.obs.to_csv(filename_out_predictions)
-
-    print(adata_target.obs)
-
-
-# %%
-celltype_counts = (
-    adata.obs
-    .groupby([sample_id, ref_meta_colname])
-    .size()
-    .reset_index(name="count")
-)
-celltype_freq = (
-    celltype_counts
-    .groupby(sample_id)
-    .apply(lambda df: df.assign(freq=df["count"] / df["count"].sum()))
-    .reset_index(drop=True)
-)
-celltype_freq
-
-# pivot to have patients as rows and cell types as columns (proportions)
-celltype_pivot = celltype_freq.pivot(index=sample_id,
-                                     columns=ref_meta_colname,
-                                     values="freq").fillna(0)
-# stacked bar plot
-celltype_pivot.plot(kind="bar",
-                    stacked=True,
-                    figsize=(16,6),
-                    colormap="tab20")  # nice color palette
-plt.ylabel("Proportion of cell types")
-plt.xlabel("Sample")
-plt.xticks(rotation=45, ha="right")
-plt.title("Cell type composition per sample")
-plt.legend(title="Cell type", bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.tight_layout()
-plt.savefig(filename_out_base + "reference_celltype_composition_per_sample.png", dpi=300, bbox_inches="tight")
-#plt.show()
-plt.close('all')
-
-# %%
-adata_target.obs
-
-# %%
-adata_target.obs[sample_id_target].unique
-
-# %%
-n_unique_sampleids = adata_target.obs[sample_id_target].nunique()
-print("Number of unique sample IDs:", n_unique_sampleids)
-
-# %%
-# Proportion of cell types per sample
-
-celltype_counts = (
-    adata_target.obs
-    .groupby([sample_id_target, predictions_meta_name])
-    .size()
-    .reset_index(name="count")
-)
-celltype_freq = (
-    celltype_counts
-    .groupby(sample_id_target)
-    .apply(lambda df: df.assign(freq=df["count"] / df["count"].sum()))
-    .reset_index(drop=True)
-)
-celltype_freq
-
-# pivot to have patients as rows and cell types as columns (proportions)
-celltype_pivot = celltype_freq.pivot(index=sample_id_target,
-                                     columns=predictions_meta_name,
-                                     values="freq").fillna(0)
-# stacked bar plot
-celltype_pivot.plot(kind="bar",
-                    stacked=True,
-                    figsize=(n_unique_sampleids,6),
-                    colormap="tab20")  # nice color palette
-plt.ylabel("Proportion of cell types")
-plt.xlabel("Sample")
-plt.xticks(rotation=45, ha="right")
-plt.title("Cell type composition per sample")
-plt.legend(title="Cell type", bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.tight_layout()
-plt.savefig(filename_out_base + "target_celltype_composition_per_sample.png", dpi=300, bbox_inches="tight")
-#plt.show()
-plt.close('all')
-
-print("Done with dataset:", filename_target)
